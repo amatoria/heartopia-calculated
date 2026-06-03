@@ -223,6 +223,7 @@ def parse_cell(text):
 
     print(clean_text)
 
+    tokens = []
     ingredients = []
 
     if clean_text is None:
@@ -230,10 +231,23 @@ def parse_cell(text):
     
     # TODO: add quantity of ingredients
     for c in clean_text:
+        if is_emoji(c):
+            tokens.append(("emoji",c))
         emoji_to_text = recipes_emoji_text(c)
         if notes != "" or notes is not None:
             emoji_to_text["note"] = notes
         ingredients.append(emoji_to_text)
+    tokens.append(("note", notes))
 
+    ingredients_qty = {}
+
+    for t in tokens:
+        if t[0] == "emoji":
+            emoji_to_text = recipes_emoji_text(t[1])
+            if emoji_to_text["name"] in ingredients_qty:
+                ingredients_qty[emoji_to_text["name"]] = ingredients_qty[emoji_to_text["name"]]+1
+            else:
+                ingredients_qty[emoji_to_text["name"]] = 1
+    print(ingredients_qty)
 
     return ingredients

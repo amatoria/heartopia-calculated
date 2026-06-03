@@ -1,0 +1,20 @@
+# To run: docker compose up -d
+# To update: docker compose pull
+
+# To query postgres: docker exec -it hearto_etl psql -U {POSTGRES_USER} -d ${POSTGRES_DB}
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: hearto_etl
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - 5433:5432
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

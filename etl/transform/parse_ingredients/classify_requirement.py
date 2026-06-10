@@ -1,12 +1,6 @@
-def is_fixed_ingredient(text):
+def classify_requirement(text):
+    lower = text.lower()
+    ingredient_chioce_keywords=[
+        "any", "fruit", "vegetable"
+    ]
     return
-
-def is_ingredient_choice(text):
-    return
-
-def is_fixed_recipe(text):
-    return
-
-def is_fixed_recipe(text):
-    return
-

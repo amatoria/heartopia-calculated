@@ -1,213 +1,39 @@
 import json
 import re
 from emoji import is_emoji
+from transform.parse_ingredients.ingredients_map import INGREDIENTS_MAP_EMOJIS, INGREDIENTS_MAP_TEXT
 
-def recipes_emoji_text(ingredient):
-    if ingredient is None:
-        return ingredient
+def count_ingredients(clean_text):
+    if clean_text is None:
+        return {}
+    
+    ingredients_qty = {}
 
-    ingredients_map_emojis = {"🍎":{
-                    "name": "apple",
-                    "type": "ingredient"
-                    },
-                  "🔵":{
-                    "name": "blueberry",
-                    "type": "ingredient"
-                    },
-                  "🍇":{
-                    "name": "grape",
-                    "type": "ingredient"
-                    },
-                  "🍊":{
-                    "name": "mandarin",
-                    "type": "ingredient"
-                    },
-                  "🍍":{
-                    "name": "pineapple",
-                    "type": "ingredient"
-                    },
-                  "🔴":{
-                    "name": "raspberry",
-                    "type": "ingredient"
-                    },
-                  "🍓":{
-                    "name": "strawberry",
-                    "type": "ingredient"
-                    },
-                  "🍅":{
-                    "name": "tomato",
-                    "type": "ingredient"
-                    },
-                  "🥬":{
-                    "name": "lettuce",
-                    "type": "ingredient"
-                    },
-                  "🥔":{
-                    "name": "potato",
-                    "type": "ingredient"
-                    },
-                  "🌾":{
-                    "name": "wheat",
-                    "type": "ingredient"
-                    },
-                  "☕":{
-                    "name": "coffee",
-                    "type": "ingredient"
-                    },
-                  "🧀":{
-                    "name": "cheese",
-                    "type": "ingredient"
-                    },
-                  "🌽":{
-                    "name": "corn",
-                    "type": "ingredient"
-                    },
-                  "🥕":{
-                    "name": "carrot",
-                    "type": "ingredient"
-                    },
-                  "🍆":{
-                    "name": "eggplant",
-                    "type": "ingredient"
-                    },
-                  "🟤":{
-                    "name": "coffee beans",
-                    "type": "ingredient"
-                    },
-                  "🧈":{
-                    "name": "butter",
-                    "type": "ingredient"
-                    },
-                  "🍫":{
-                    "name": "cocoa",
-                    "type": "ingredient"
-                    },
-                  "🛢️":{
-                    "name": "cooking oil",
-                    "type": "ingredient"
-                    },
-                  "🥚":{
-                    "name": "egg",
-                    "type": "ingredient"
-                    },
-                  "🥛":{
-                    "name": "milk",
-                    "type": "ingredient"
-                    },
-                  "🥩":{
-                    "name": "meat",
-                    "type": "ingredient"
-                    },
-                  "🌰":{
-                    "name": "truffle",
-                    "type": "ingredient"
-                    },
+    for key,value in INGREDIENTS_MAP_EMOJIS.items():
+        occurrences = clean_text.count(key)
 
-                  "❤️":{
-                    "name": "red sugar",
-                    "type": "ingredient"
-                    },
-                  "🧡":{
-                    "name": "orange sugar",
-                    "type": "ingredient"
-                    },
-                  "💛":{
-                    "name": "yellow sugar",
-                    "type": "ingredient"
-                    },
-                  "💜":{
-                    "name": "violet sugar",
-                    "type": "ingredient"
-                    },
-                  "💚":{
-                    "name": "green sugar",
-                    "type": "ingredient"
-                    },
-                  "💙":{
-                    "name": "blue sugar",
-                    "type": "ingredient"
-                    },
-                  "🖤":{
-                    "name": "indigo sugar",
-                    "type": "ingredient"
-                    },
-                  "🟫":{
-                    "name": "springday brown sugar",
-                    "type": "ingredient"
-                    },
-                  "💃":{
-                    "name": "salsa",
-                    "type": "ingredient"
-                    },
-                  "🌳":{
-                    "name": "romaine lettuce",
-                    "type": "ingredient"
-                    },
-                  "🟩":{
-                    "name": "matcha",
-                    "type": "ingredient"
-                    },
-                  "🌲":{
-                    "name": "tea tree",
-                    "type": "ingredient"
-                    },
-                  "🍵":{
-                    "name": "tea leaves",
-                    "type": "ingredient"
-                    },
-        
-                  # The following emojis considering items in the category (e.g. *any* vegetable)
-                  "🥦":{
-                    "name": "vegetable",
-                    "type": "category"
-                    },
-                  "🍄":{
-                    "name": "mushroom",
-                    "type": "category"
-                    },
-                  "🐟":{
-                    "name": "fish",
-                    "type": "category"
-                    },
-                  "🥫":{
-                    "name": "jam",
-                    "type": "category"
-                    },                 
-                  "🦞":{
-                    "name": "shellfish",
-                    "type": "category"
-                    },                  
-                  "⚪":{
-                    "name": "sugar",
-                    "type": "category"
-                    }
-    }
+        if occurrences:
+            ingredients_qty[key] = occurrences
+    return ingredients_qty
 
-    ingredients_map_text = {
-        "white daisy flower":{
-            "name": "white daisy flower",
-            "type": "ingredient"
-        },
-        "king crab":{
-            "name": "king crab",
-            "type": "ingredient",
-        },
-        "blue european crayfish":{
-            "name": "blue european crayfish",
-            "type": "ingredient"
-        },
-        "golden king crab":{
-            "name": "golden king crab",
-            "type": "ingredient"
-        }
-    }
+def parse_ingredients(ingredients_qty):
+    ingredient_entries = []
+    for ingredient, qty in ingredients_qty.items():
+      ingredient_entry = {}
+      ingredient_info = INGREDIENTS_MAP_EMOJIS[ingredient]
 
-    if ingredient not in ingredients_map_emojis:
-        return {"name": ingredient,
-                "type": "unknown", 
-                "note": "token unreadable"}
-    ingredients_json = ingredients_map_emojis.get(ingredient)
-    return ingredients_json
+      ingredient_entry["name"] = ingredient_info["name"]
+      ingredient_entry["type"] = ingredient_info["type"]
+      ingredient_entry["quantity"] = ingredients_qty[ingredient]
+      ingredient_entries.append(ingredient_entry)
+
+    return ingredient_entries
+
+def parse_notes(notes):
+    if notes is None or notes == "":
+        return None
+    
+    return notes
 
 def parse_cell(text):
     if not text or str(text).strip() == "":
@@ -229,25 +55,9 @@ def parse_cell(text):
     if clean_text is None:
         return []
     
-    # TODO: add quantity of ingredients
-    for c in clean_text:
-        if is_emoji(c):
-            tokens.append(("emoji",c))
-        emoji_to_text = recipes_emoji_text(c)
-        if notes != "" or notes is not None:
-            emoji_to_text["note"] = notes
-        ingredients.append(emoji_to_text)
-    tokens.append(("note", notes))
-
-    ingredients_qty = {}
-
-    for t in tokens:
-        if t[0] == "emoji":
-            emoji_to_text = recipes_emoji_text(t[1])
-            if emoji_to_text["name"] in ingredients_qty:
-                ingredients_qty[emoji_to_text["name"]] = ingredients_qty[emoji_to_text["name"]]+1
-            else:
-                ingredients_qty[emoji_to_text["name"]] = 1
+    ingredients_qty = count_ingredients(clean_text)
     print(ingredients_qty)
-
-    return ingredients
+    ingredients_entries = parse_ingredients(ingredients_qty)
+    print(ingredients_entries)
+    # print(notes)
+    # return ingredients

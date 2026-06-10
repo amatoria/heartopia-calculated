@@ -29,7 +29,7 @@ def get_all_df():
     fish = extraction(1, "B2:N85")
     all_data.update({"fish": fish})
 
-    recipes = extraction(7, "B2:U93")
+    recipes = extraction(7, "B3:U93")
     all_data.update({"recipes": recipes})
 
     # ingredients = extraction(7, "AB12:AD57")

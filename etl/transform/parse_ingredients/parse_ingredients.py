@@ -1,63 +1,169 @@
-import json
 import re
 from emoji import is_emoji
 from transform.parse_ingredients.ingredients_map import INGREDIENTS_MAP_EMOJIS, INGREDIENTS_MAP_TEXT
 
-def count_ingredients(clean_text):
-    if clean_text is None:
-        return {}
-    
-    ingredients_qty = {}
+_WORD_NUMBERS = {
+  "one": 1, "two": 2, "three": 3, "four": 4, "five": 5,
+  "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10,
+}
 
-    for key,value in INGREDIENTS_MAP_EMOJIS.items():
-        occurrences = clean_text.count(key)
+def _resolve_emoji(emoji: str) -> str:
+  """
+  Finds the ingredient name of an emoji.
 
-        if occurrences:
-            ingredients_qty[key] = occurrences
-    return ingredients_qty
+  - emoji: the emoji whose name is to be found
+  - return: string of the ingredient name for an emoji, or the raw emoji if not in map
+  """
+  info = INGREDIENTS_MAP_EMOJIS.get(emoji)
+  return info["name"] if info else emoji
 
-def parse_ingredients(ingredients_qty):
-    ingredient_entries = []
-    for ingredient, qty in ingredients_qty.items():
-      ingredient_entry = {}
-      ingredient_info = INGREDIENTS_MAP_EMOJIS[ingredient]
 
-      ingredient_entry["name"] = ingredient_info["name"]
-      ingredient_entry["type"] = ingredient_info["type"]
-      ingredient_entry["quantity"] = ingredients_qty[ingredient]
-      ingredient_entries.append(ingredient_entry)
+def _extract_resolved(text: str) -> list[str]:
+  """
+  Identifies emojis in a given string to parse into ingredient name.
 
-    return ingredient_entries
+  - text: the string in which to parse for emojis
+  - return: list of resolved ingredient names for every emoji in text
+  """
+  return [_resolve_emoji(ch) for ch in text if is_emoji(ch)]
 
-def parse_notes(notes):
-    if notes is None or notes == "":
-        return None
-    
-    return notes
+def _group_emoji_runs(names: list[str]) -> list[dict]:
+  """
+  hi
+  """
+  choices = []
+  for name in names:
+      if choices and choices[-1]["options"] == [name]:
+          choices[-1]["count"] += 1
+      else:
+          choices.append({"count": 1, "options": [name]})
+  return choices
 
-def parse_cell(text):
+def _parse_quantity_prefix(text: str) -> tuple[int | None, str]:
+  """
+  Extract a leading count from text,
+    e.g.  "Any of the four ...", "Two fruit ...", "3 Golden King Crabs ..."
+
+  - text: the string of text that may 
+  - returns: (count, remainder) or (None, original_text).
+  """
+  text = text.strip()
+
+  # "Any of the <word|digit>"
+  m = re.match(r"any(?:\s+of)?(?:\s+the)?\s+(\w+)", text, re.IGNORECASE)
+  if m:
+      word = m.group(1).lower()
+      count = _WORD_NUMBERS.get(word) or (int(word) if word.isdigit() else None)
+      return count, text[m.end():].strip()
+
+  # Leading digit: "3 Golden King Crabs"
+  m = re.match(r"(\d+)\s+", text)
+  if m:
+      return int(m.group(1)), text[m.end():].strip()
+
+  # Leading word-number: "Two fruit"
+  m = re.match(r"(\w+)\b", text)
+  if m:
+      word = m.group(1).lower()
+      if word in _WORD_NUMBERS:
+          return _WORD_NUMBERS[word], text[m.end():].strip()
+
+  return None, text
+
+
+def _resolve_text_ingredients(text: str) -> list[dict]:
+    """
+    Formats the cell such that each recipe's ingredients and ingredient quality is listed, such as:
+
+        [{count: 4, options: {apple, blueberry, raspberry, mandarin}]
+
+    - text: the string of ingredients to convert
+    - returns: a list of each ingredient choice and the quantity required 
+    """
+    choices = []
+    remainder = text
+
+    for key in sorted(INGREDIENTS_MAP_TEXT, key=len, reverse=True):
+        pattern = re.compile(re.escape(key), re.IGNORECASE)
+        if not pattern.search(remainder):
+            continue
+
+        count_match = re.search(rf"(\d+)\s+{re.escape(key)}", remainder, re.IGNORECASE)
+        qty = int(count_match.group(1)) if count_match else 1
+
+        choices.append({
+            "count": qty,
+            "options": [INGREDIENTS_MAP_TEXT[key]["name"]],
+        })
+        remainder = pattern.sub("", remainder)
+        if count_match:
+            remainder = remainder.replace(count_match.group(1), "", 1)
+
+    return choices
+
+
+def parse_cell(text) -> list[dict] | None:
+    """
+    Parse a raw ingredient cell into a unified list of choice objects:
+
+        [{"count": N, "options": [emoji, ...]}, ...]
+
+    - Fixed ingredients  →  count=N, options=[single emoji]
+    - Real choices       →  count=N, options=[emoji, emoji, ...]
+    - Text ingredients   →  resolved via INGREDIENTS_MAP_TEXT, same shape
+    - Empty / null       →  returns None
+    """
     if not text or str(text).strip() == "":
         return None
-    
-    text = str(text)
 
-    notes = re.findall(r"\((.*?)\)", text)
-    notes += re.findall(r"\[(.*?)\]", text)
+    text = str(text).strip()
 
-    clean_text = re.sub(r"\(.*?\)", "", text)
-    clean_text = re.sub(r"\[.*?\]", "", clean_text)
+    # Strip bracket/paren content, but save paren emoji pools first
+    # Paren contents may hold an explicit option pool, e.g. "Two fruit (🔵🔴🍍...)"
+    paren_pools = [
+        _extract_resolved(m)
+        for m in re.findall(r"\(([^)]*)\)", text)
+        if _extract_resolved(m)   # only keep parens that actually contain emojis
+    ]
 
-    print(clean_text)
+    clean = re.sub(r"\(.*?\)", "", text)
+    clean = re.sub(r"\[.*?\]", "", clean).strip()
 
-    tokens = []
-    ingredients = []
+    # Separate text tokens from emoji tokens
+    # Split into alternating runs: text chunks vs emoji characters
+    text_parts = []
+    emoji_list = []
 
-    if clean_text is None:
-        return []
-    
-    ingredients_qty = count_ingredients(clean_text)
-    print(ingredients_qty)
-    ingredients_entries = parse_ingredients(ingredients_qty)
-    print(ingredients_entries)
-    # print(notes)
-    # return ingredients
+    for token in re.findall(r"\S+", clean):
+        token_emojis = _extract_resolved(token)
+        if token_emojis:
+            emoji_list += token_emojis
+        elif token not in ("+", "&"):
+            text_parts.append(token)
+
+    combined_text = " ".join(text_parts).strip()
+
+    # Check for a quantity-prefix choice line
+    # e.g. "Any of the four 🍎🔵🍇🍊", "Two fruit (🔵🔴...) + 🥛🥛"
+    count, _ = _parse_quantity_prefix(combined_text)
+    is_choice_line = count is not None and (emoji_list or paren_pools)
+
+    choices = []
+
+    if is_choice_line:
+        # Option pool: prefer explicit paren pool, else all emojis on the line
+        option_pool = paren_pools[0] if paren_pools else emoji_list
+
+        choices.append({"count": count, "options": option_pool})
+
+        # Any emojis NOT in the pool are fixed ingredients alongside the choice
+        pool_set = set(option_pool)
+        fixed = [e for e in emoji_list if e not in pool_set]
+        choices += _group_emoji_runs(fixed)
+
+    else:
+        # Normal line: group emoji runs + resolve text ingredients
+        choices += _group_emoji_runs(emoji_list)
+        choices += _resolve_text_ingredients(combined_text)
+
+    return choices if choices else None

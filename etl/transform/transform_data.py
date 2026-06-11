@@ -140,5 +140,5 @@ def transform_recipes(df):
     for column in numerical_columns:
         df_cleaned[column] = df_cleaned[column].apply(normalize_numerical_values)
 
-    df_cleaned["ingredients_parsed"] = df_cleaned["ingredients_raw"].apply(parse_cell)
+    df_cleaned["ingredient_parsed"] = df_cleaned["ingredients_raw"].apply(parse_cell)
     return df_cleaned

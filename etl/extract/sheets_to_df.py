@@ -6,18 +6,46 @@ sheet = gc.open("Copy of Heartopia Guide - updated April 21st")
 
 
 def get_data(worksheet_number, cell_values):
+    """
+    Get the data from the worksheet.
+    Args:
+        worksheet_number: The number of the worksheet to get the data from.
+        cell_values: The cells to get the data from.
+    Returns:
+        data: The data from the worksheet.
+    """
     return sheet.get_worksheet(worksheet_number).get(cell_values)
 
 def convert_to_df(data):
+    """
+    Convert the data to a DataFrame.
+    Args:
+        data: The data to convert to a DataFrame.
+    Returns:
+        df: The DataFrame.
+    """
     df = pd.DataFrame(data, columns=data[0])
     return(df)
 
 def extraction(worksheet_number, cell_values):
+    """
+    Extract the data from the worksheet.
+    Args:
+        worksheet_number: The number of the worksheet to get the data from.
+        cell_values: The cells to get the data from.
+    Returns:
+        df: The DataFrame.
+    """
     data = get_data(worksheet_number, cell_values)
     df = convert_to_df(data)
     return(df)
 
 def get_all_df():
+    """
+    Get all the data from the worksheets.
+    Returns:
+        all_data: A dictionary of the data from the worksheets.
+    """
     all_data = {}
 
     crops = extraction(4,"A2:J15")

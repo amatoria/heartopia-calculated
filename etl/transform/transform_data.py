@@ -3,6 +3,13 @@ from transform.parse_ingredients.parse_ingredients import *
 import re
 
 def transform_crops(df):
+    """
+    Transform the crops data.
+    Args:
+        df: The raw crops data.
+    Returns:
+        df_cleaned: The cleaned crops data.
+    """
     df_cleaned = df.copy()
 
     # Relabel columns to have more conventional naming
@@ -30,6 +37,13 @@ def transform_crops(df):
     return df_cleaned
 
 def transform_forageables(df):
+    """
+    Transform the forageables data.
+    Args:
+        df: The raw forageables data.
+    Returns:
+        df_cleaned: The cleaned forageables data.
+    """
     df_cleaned = df.copy()
 
     # Relabel columns to have more conventional naming
@@ -49,6 +63,13 @@ def transform_forageables(df):
     return df_cleaned
 
 def transform_fish(df):
+    """
+    Transform the fish data.
+    Args:
+        df: The raw fish data.
+    Returns:
+        df_cleaned: The cleaned fish data.
+    """
     df_cleaned = df.copy()
 
     df_cleaned = df_cleaned.rename(columns={
@@ -83,10 +104,19 @@ def transform_fish(df):
     for column in emoji_columns:
         df_cleaned[column] = df_cleaned[column].apply(weather_time_emoji_text)
 
+    df_cleaned["category"] = df_cleaned["fish_cleaned"].apply(get_fish_category)
+
     return df_cleaned
 
 
 def transform_recipes(df):
+    """ 
+    Transform the recipes data.
+    Args:
+        df: The raw recipes data.
+    Returns:
+        df_cleaned: The cleaned recipes data.
+    """
     df_cleaned = df.copy()
 
     # remove fully empty AND blank-string columns

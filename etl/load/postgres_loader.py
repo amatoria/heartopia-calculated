@@ -10,6 +10,11 @@ from sqlalchemy.types import JSON
 load_dotenv()
 
 def get_engine():
+    """
+    Get the engine for the PostgreSQL database.
+    Returns:
+        engine: The engine for the PostgreSQL database.
+    """
     DB_USER= os.getenv("POSTGRES_USER")
     DB_PASSWORD = os.getenv("POSTGRES_PASSWORD")
     DB_NAME = os.getenv("POSTGRES_DB")
@@ -22,7 +27,13 @@ def get_engine():
 
 
 def df_to_sql(table_name, df, engine):
-
+    """
+    Load a DataFrame into the PostgreSQL database.
+    Args:
+        table_name: The name of the table to load the data into.
+        df: The DataFrame to load into the database.
+        engine: The engine for the PostgreSQL database.
+    """
     if df is None:
         raise ValueError(f"{table_name} DataFrame is None.")
 

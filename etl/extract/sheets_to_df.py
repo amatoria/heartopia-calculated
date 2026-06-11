@@ -60,9 +60,6 @@ def get_all_df():
     recipes = extraction(7, "B3:U93")
     all_data.update({"recipes": recipes})
 
-    # ingredients = extraction(7, "AB12:AD57")
-    # all_data.update({"ingredients": ingredients})
-
     return(all_data)
     
 

@@ -47,5 +47,5 @@ def df_to_sql(table_name, df, engine):
         con=engine,
         if_exists="replace",
         index=False,
-        dtype={"ingredients_parsed": JSON()}
+        dtype={"ingredient_parsed": JSON()}
     )

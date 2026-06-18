@@ -1,6 +1,7 @@
 import re
 from emoji import is_emoji
 from transform.parse_ingredients.ingredients_map import INGREDIENTS_MAP_EMOJIS, INGREDIENTS_MAP_TEXT
+import pandas as pd
 
 _WORD_NUMBERS = {
   "one": 1, "two": 2, "three": 3, "four": 4, "five": 5,
@@ -114,6 +115,28 @@ def _resolve_text_ingredients(text: str) -> list[dict]:
 
     return choices
 
+def parse_cost(value) -> tuple[float | None, float | None]:
+    """'300-460' → (300, 460), '475' → (475, 475), blank → (None, None)"""
+    s = str(value).strip()
+    if not s or s in ("nan", ""):
+        return None, None
+    m = re.match(r"([\d.]+)\s*-\s*([\d.]+)", s)
+    if m:
+        return float(m.group(1)), float(m.group(2))
+    m = re.match(r"([\d.]+)", s)
+    if m:
+        v = float(m.group(1))
+        return v, v
+    return None, None
+
+
+def parse_energy(value) -> float | None:
+    """'+35 (Energy Buff)' → 35.0, blank → None"""
+    s = str(value).strip()
+    if not s or s in ("nan", ""):
+        return None
+    m = re.search(r"[+-]?([\d.]+)", s)
+    return float(m.group(1)) if m else None
 
 def parse_cell(text) -> list[dict] | None:
     """

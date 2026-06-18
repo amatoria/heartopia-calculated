@@ -38,7 +38,8 @@ def run_pipeline():
     df_to_sql("crops", cleaned_df_crops, engine)
     df_to_sql("forageables", cleaned_df_forageables, engine)
     df_to_sql("fish", cleaned_df_fish, engine)
-    df_to_sql("recipes", cleaned_df_recipes, engine)
+    df_to_sql("recipes", build_recipe_table(cleaned_df_recipes), engine)
+    df_to_sql("ingredients", build_ingredient_table(cleaned_df_recipes), engine)
 
     logging.info("ETL complete.")
 

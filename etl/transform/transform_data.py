@@ -1,6 +1,8 @@
 from transform.clean_data import *
 from transform.parse_ingredients.parse_ingredients import *
 import re
+from transform.parse_ingredients.parse_ingredients import parse_cost, parse_energy
+from transform.correct_data import *
 
 def transform_crops(df):
     """
@@ -26,6 +28,8 @@ def transform_crops(df):
         "⭐⭐⭐⭐⭐": "star_5",
     })
 
+    df_cleaned["notes"] = ""
+
     df_cleaned["seed_name"] = df_cleaned["seed_name"].apply(clean_name)
     df_cleaned["growth_time_minutes"] = df_cleaned["growth_time_minutes"].apply(normalize_time)
 
@@ -33,7 +37,9 @@ def transform_crops(df):
     
     for column in numerical_columns:
         df_cleaned[column] = df_cleaned[column].apply(normalize_numerical_values)
-        
+    
+    df_cleaned = correct_crops_data(df_cleaned)
+            
     return df_cleaned
 
 def transform_forageables(df):
@@ -108,6 +114,100 @@ def transform_fish(df):
 
     return df_cleaned
 
+def build_recipe_table(df_cleaned: pd.DataFrame) -> pd.DataFrame:
+    rows = []
+
+    for r, row in df_cleaned.iterrows():
+        cost_min, cost_max = parse_cost(row["cost_to_make"])
+
+        rows.append({
+            "recipe_name":    row["recipe_name"],
+            "cooking_level":  row["cooking_level"],
+            "recipe_price":   row["recipe_price"] if str(row["recipe_price"]).strip() not in ("", "nan") else None,
+            "cost_min":       cost_min,
+            "cost_max":       cost_max,
+            "price_star_1":   row["price_star_1"],
+            "price_star_2":   row["price_star_2"],
+            "price_star_3":   row["price_star_3"],
+            "price_star_4":   row["price_star_4"],
+            "price_star_5":   row["price_star_5"],
+            "energy_star_1":  parse_energy(row["energy_star_1"]),
+            "energy_star_2":  parse_energy(row["energy_star_2"]),
+            "energy_star_3":  parse_energy(row["energy_star_3"]),
+            "energy_star_4":  parse_energy(row["energy_star_4"]),
+            "energy_star_5":  parse_energy(row["energy_star_5"]),
+            "profit_star_1":  row["profit_star_1"],
+            "profit_star_2":  row["profit_star_2"],
+            "profit_star_3":  row["profit_star_3"],
+            "profit_star_4":  row["profit_star_4"],
+            "profit_star_5":  row["profit_star_5"],
+        })
+
+    return pd.DataFrame(rows)
+
+def build_ingredient_table(df_cleaned: pd.DataFrame) -> pd.DataFrame:
+    """
+    For each recipe, parse the ingredients cell and explode into one row
+    per ingredient option, with choice_group and choice_pick_count.
+
+    Output columns:
+        recipe_name, ingredient, type, quantity,
+        choice_group, choice_pick_count
+    """
+    rows = []
+
+    for _, row in df_cleaned.iterrows():
+        recipe_name = row["recipe_name"]
+        parsed = parse_cell(row["ingredients_raw"])
+
+        if not parsed:
+            # Unparseable cell (e.g. pure text note) — still emit a sentinel
+            # row so the recipe isn't silently absent from the ingredient table
+            rows.append({
+                "recipe_name":       recipe_name,
+                "ingredient":        None,
+                "type":              None,
+                "quantity":          None,
+                "choice_group":      None,
+                "choice_pick_count": None,
+            })
+            continue
+
+        choice_group_counter = 1
+
+        for choice in parsed:
+            options = choice["options"]
+            count   = choice["count"]
+            is_choice = len(options) > 1
+
+            choice_group      = choice_group_counter if is_choice else None
+            choice_pick_count = count if is_choice else None
+
+            for option in options:
+                # Resolve type from either map
+                ingredient_type = None
+                for emoji, info in INGREDIENTS_MAP_EMOJIS.items():
+                    if info["name"] == option:
+                        ingredient_type = info["type"]
+                        break
+                if ingredient_type is None and option in INGREDIENTS_MAP_TEXT:
+                    ingredient_type = INGREDIENTS_MAP_TEXT[option]["type"]
+
+                rows.append({
+                    "recipe_name":       recipe_name,
+                    "ingredient":        option,
+                    # fixed ingredients carry their count in quantity;
+                    # choice ingredients always contribute 1 slot per option
+                    "quantity":          count if not is_choice else 1,
+                    "type":              ingredient_type,
+                    "choice_group":      choice_group,
+                    "choice_pick_count": choice_pick_count,
+                })
+
+            if is_choice:
+                choice_group_counter += 1
+
+    return pd.DataFrame(rows)
 
 def transform_recipes(df):
     """ 

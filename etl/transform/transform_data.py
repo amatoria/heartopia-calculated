@@ -68,6 +68,18 @@ def transform_forageables(df):
 
     return df_cleaned
 
+def build_fish_weather_table(df: pd.DataFrame) -> pd.DataFrame:
+    fish_weather = df[["fish_id", "weather"]].explode("weather").dropna(subset=["weather"]).reset_index(drop=True)    
+    return fish_weather
+
+def build_fish_time_of_day_table(df: pd.DataFrame) -> pd.DataFrame:
+    fish_time_of_day = df[["fish_id", "time_of_day"]].explode("time_of_day").dropna(subset=["time_of_day"]).reset_index(drop=True)
+    return fish_time_of_day
+
+def build_fish_main_table(df):
+    fish_main = df.drop(columns=["weather", "time_of_day"])
+    return fish_main
+
 def transform_fish(df):
     """
     Transform the fish data.
@@ -109,6 +121,9 @@ def transform_fish(df):
     emoji_columns = ["weather", "time_of_day"]
     for column in emoji_columns:
         df_cleaned[column] = df_cleaned[column].apply(weather_time_emoji_text)
+
+    df_cleaned = df_cleaned.reset_index(drop=True)
+    df_cleaned.insert(0, "fish_id", df_cleaned.index + 1)
 
     df_cleaned["category"] = df_cleaned["fish_cleaned"].apply(get_fish_category)
 

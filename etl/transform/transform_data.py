@@ -1,4 +1,4 @@
-from transform.clean_data import *
+from transform.clean.clean_data import *
 from transform.parse_ingredients.parse_ingredients import *
 import re
 from transform.parse_ingredients.parse_ingredients import parse_cost, parse_energy

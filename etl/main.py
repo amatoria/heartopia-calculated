@@ -44,6 +44,8 @@ def run_pipeline():
     df_to_sql("fish_weather", build_fish_weather_table(cleaned_df_fish), engine)
     df_to_sql("fish_time_of_day", build_fish_time_of_day_table(cleaned_df_fish), engine)
 
+    df_to_sql("correction_log", build_correction_table(), engine)
+
     logging.info("ETL complete.")
 
 if __name__ == "__main__":

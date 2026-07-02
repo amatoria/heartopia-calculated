@@ -130,13 +130,13 @@ def parse_cost(value) -> tuple[float | None, float | None]:
     return None, None
 
 
-def parse_energy(value) -> float | None:
-    """'+35 (Energy Buff)' → 35.0, blank → None"""
+def parse_energy(value) -> int | None:
+    """'+35 (Energy Buff)' → 35, blank → None"""
     s = str(value).strip()
     if not s or s in ("nan", ""):
         return None
     m = re.search(r"[+-]?([\d.]+)", s)
-    return float(m.group(1)) if m else None
+    return int(m.group(1)) if m else None
 
 def parse_cell(text) -> list[dict] | None:
     """
@@ -180,7 +180,7 @@ def parse_cell(text) -> list[dict] | None:
     combined_text = " ".join(text_parts).strip()
 
     # Check for a quantity-prefix choice line
-    # e.g. "Any of the four 🍎🔵🍇🍊", "Two fruit (🔵🔴...) + 🥛🥛"
+    # e.g. "Any of the four", "Two fruit (...)"
     count, _ = _parse_quantity_prefix(combined_text)
     is_choice_line = count is not None and (emoji_list or paren_pools)
 

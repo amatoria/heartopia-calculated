@@ -20,10 +20,7 @@ def run_pipeline():
     cleaned_df_fish = transform_fish(raw_df_fish)
 
     raw_df_recipes = dfs["recipes"]
-    cleaned_df_recipes = transform_recipes(raw_df_recipes)
-
-    for i, col in enumerate(cleaned_df_recipes.columns):
-        print(i, repr(col))
+    cleaned_df_recipes = clean_recipes_table(transform_recipes(raw_df_recipes))
 
     # Load
     logging.info("Creating engine...")
@@ -38,7 +35,7 @@ def run_pipeline():
     df_to_sql("crops", cleaned_df_crops, engine)
     df_to_sql("forageables", cleaned_df_forageables, engine)
     df_to_sql("fish", cleaned_df_fish, engine)
-    df_to_sql("recipes", build_recipe_table(cleaned_df_recipes), engine)
+    df_to_sql("recipes", build_recipes_table(cleaned_df_recipes), engine)
     df_to_sql("ingredients", build_ingredient_table(cleaned_df_recipes), engine)
     df_to_sql("fish", build_fish_main_table(cleaned_df_fish), engine)
     df_to_sql("fish_weather", build_fish_weather_table(cleaned_df_fish), engine)

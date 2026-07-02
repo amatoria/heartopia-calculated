@@ -1,6 +1,9 @@
 import re
 import unicodedata
 import json
+import pandas as pd
+from transform.correct_data_log import correct_data_log
+from transform.parse_ingredients.parse_ingredients import parse_energy
 
 def clean_name(name) -> str:
     """
@@ -159,4 +162,104 @@ def weather_time_emoji_text(values) -> list[str]:
             case "🌇":
                 values_text.append("dawn")
     return values_text
+
+def fix_blue_european_crayfish_sashimi(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Derive Blue European Crayfish Sashimi's recipe_price and energy values
+    from Crayfish Sashimi: same price, 2x energy gained per star level.
+    """
+    df_corrected = df.copy()
+
+    source_mask = df_corrected["recipe_name"] == "Crayfish Sashimi"
+    target_mask = df_corrected["recipe_name"] == "Blue European Crayfish Sashimi"
+
+    if not source_mask.any() or not target_mask.any():
+        print("Warning: source or target row not found for crayfish sashimi correction")
+        return df_corrected
+
+    source = df_corrected.loc[source_mask].iloc[0]    
+    energy_columns = ["energy_star_1", "energy_star_2", "energy_star_3", "energy_star_4", "energy_star_5"]
+
+    for i in df_corrected.loc[target_mask].index:
+        correct_data_log(
+            table_name="recipes",
+            row_key="Blue European Crayfish Sashimi",
+            column_name="recipe_price",
+            original_value=None,
+            corrected_value=source["recipe_price"],
+            reason="Missing recipe_price; derived as same as Crayfish Sashimi",
+            source="Crayfish Sashimi entry",
+        )
+        df_corrected.at[i, "recipe_price"] = int(source["recipe_price"])
+
+        for column in energy_columns:
+            parsed_energy = parse_energy(source[column])
+            corrected = int(parsed_energy * 2)
+            correct_data_log(
+                table_name="recipes",
+                row_key="Blue European Crayfish Sashimi",
+                column_name=column,
+                original_value=None,
+                corrected_value=corrected,
+                reason="Missing energy value; derived as 2x Crayfish Sashimi",
+                source="calculated",
+            )
+            df_corrected.at[i, column] = corrected
+
+    return df_corrected
+
+def fix_milkshake_recipe_prices(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Derive recipe prices that use the Milkshake recipe as its base.
+    """
+    
+    df_corrected = df.copy()
+    source_mask = df_corrected["recipe_name"] == "Milkshake (Regular)"
+    target_mask = df_corrected["recipe_name"].str.startswith("Milkshake (") & (df_corrected["recipe_name"] != "Milkshake(Regular)")
+
+    if not source_mask.any() or not target_mask.any():
+        print("Warning: source or target row not found for milkshake correction")
+        return df_corrected
+
+    source = df_corrected.loc[source_mask].iloc[0]
+
+    for i in df_corrected.loc[target_mask].index:
+        correct_data_log(
+            table_name="recipes",
+            row_key=df_corrected.at[i, "recipe_name"],
+            column_name="recipe_price",
+            original_value=int(df_corrected.at[i, "recipe_price"]),
+            corrected_value=source["recipe_price"],
+            reason="Missing recipe_price; derived as same as Milkshake",
+            source="Milkshake recipe",
+        )
+        df_corrected.at[i, "recipe_price"] = source["recipe_price"]
+
+    return df_corrected
+
+def normalize_recipe_price(df: pd.DataFrame) -> pd.DataFrame:
+    df_corrected = df.copy()
+
+    blank_mask = df_corrected["recipe_price"].isna() | (df_corrected["recipe_price"].astype(str).str.strip() == "")
+
+    for i in df_corrected.loc[blank_mask].index:
+        correct_data_log(
+            table_name="recipes",
+            row_key=df_corrected.at[i, "recipe_name"],
+            column_name="recipe_price",
+            original_value=df_corrected.at[i, "recipe_price"],
+            corrected_value=0,
+            reason="Normalize free recipe price",
+            source="calculated",
+        )
+        df_corrected.at[i, "recipe_price"] = 0
+
+    return df_corrected
+
+def clean_recipes_table(df: pd.DataFrame) -> pd.DataFrame:
+    df_corrected = df.copy()
+    df_corrected = normalize_recipe_price(df_corrected)
+    df_corrected = fix_blue_european_crayfish_sashimi(df_corrected)
+    df_corrected = fix_milkshake_recipe_prices(df_corrected)
+    return df_corrected
 

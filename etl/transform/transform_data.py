@@ -123,24 +123,21 @@ def transform_fish(df):
         df_cleaned[column] = df_cleaned[column].apply(weather_time_emoji_text)
 
     df_cleaned = df_cleaned.reset_index(drop=True)
-    df_cleaned.insert(0, "fish_id", df_cleaned.index + 1)
+    df_cleaned.insert(0, "fish_id", df_cleaned.index)
 
     df_cleaned["category"] = df_cleaned["fish_cleaned"].apply(get_fish_category)
 
     return df_cleaned
 
-def build_recipe_table(df_cleaned: pd.DataFrame) -> pd.DataFrame:
+def build_recipes_table(df_cleaned: pd.DataFrame) -> pd.DataFrame:
     rows = []
 
     for r, row in df_cleaned.iterrows():
-        cost_min, cost_max = parse_cost(row["cost_to_make"])
 
         rows.append({
             "recipe_name":    row["recipe_name"],
             "cooking_level":  row["cooking_level"],
             "recipe_price":   row["recipe_price"] if str(row["recipe_price"]).strip() not in ("", "nan") else None,
-            "cost_min":       cost_min,
-            "cost_max":       cost_max,
             "price_star_1":   row["price_star_1"],
             "price_star_2":   row["price_star_2"],
             "price_star_3":   row["price_star_3"],

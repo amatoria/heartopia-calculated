@@ -27,5 +27,5 @@ def correct_data_log(
 
 def build_correction_table() -> pd.DataFrame:
     return pd.DataFrame(correction_log, columns=[
-        "table_name", "row_key", "column_name", "original_value", "reason", "source"
+        "table_name", "row_key", "column_name", "original_value", "corrected_value", "reason", "source"
     ])

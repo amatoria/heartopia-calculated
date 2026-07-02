@@ -16,7 +16,7 @@ def get_data(worksheet_number, cell_values):
     """
     return sheet.get_worksheet(worksheet_number).get(cell_values)
 
-def convert_to_df(data):
+def convert_to_df(data) -> pd.DataFrame:
     """
     Convert the data to a DataFrame.
     Args:
@@ -24,8 +24,16 @@ def convert_to_df(data):
     Returns:
         df: The DataFrame.
     """
-    df = pd.DataFrame(data, columns=data[0])
-    return(df)
+    if not data:
+        return pd.DataFrame()
+    
+    headers = data[0]
+    num_cols = len(headers)
+    
+    # Pad each row to match header length
+    padded = [row + [""] * (num_cols - len(row)) for row in data[1:]]
+    
+    return pd.DataFrame(padded, columns=headers)
 
 def extraction(worksheet_number, cell_values):
     """

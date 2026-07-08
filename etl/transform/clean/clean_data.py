@@ -208,34 +208,57 @@ def fix_blue_european_crayfish_sashimi(df: pd.DataFrame) -> pd.DataFrame:
 
     return df_corrected
 
-def fix_milkshake_recipe_prices(df: pd.DataFrame) -> pd.DataFrame:
+def fix_recipe_prices_from_base(
+    df: pd.DataFrame,
+    corrections: dict[str, callable],
+) -> pd.DataFrame:
     """
-    Derive recipe prices that use the Milkshake recipe as its base.
+    Correct recipe_price for recipes derived from a base recipe.
+
+    Args:
+        df: the recipes dataframe
+        corrections: dict mapping base_recipe_name -> target_mask_fn
+                     where target_mask_fn takes a dataframe and returns a boolean Series.
+
+    Example:
+        corrections = {
+            "Crayfish Sashimi": lambda df: df["recipe_name"] == "Blue European Crayfish Sashimi",
+            "Milkshake (Regular)": lambda df: (
+                df["recipe_name"].str.startswith("Milkshake (") &
+                (df["recipe_name"] != "Milkshake (Regular)")
+            ),
+        }
     """
-    
     df_corrected = df.copy()
-    source_mask = df_corrected["recipe_name"] == "Milkshake (Regular)"
-    target_mask = df_corrected["recipe_name"].str.startswith("Milkshake (") & (df_corrected["recipe_name"] != "Milkshake(Regular)")
 
-    if not source_mask.any() or not target_mask.any():
-        print("Warning: source or target row not found for milkshake correction")
-        return df_corrected
+    for base_recipe, target_mask_fn in corrections.items():
+        source_mask = df_corrected["recipe_name"] == base_recipe
+        target_mask = target_mask_fn(df_corrected)
 
-    source = df_corrected.loc[source_mask].iloc[0]
+        if not source_mask.any():
+            print(f"Warning: base recipe '{base_recipe}' not found — skipped")
+            continue
+        if not target_mask.any():
+            print(f"Warning: no target recipes found for base '{base_recipe}' — skipped")
+            continue
 
-    for i in df_corrected.loc[target_mask].index:
-        correct_data_log(
-            table_name="recipes",
-            row_key=df_corrected.at[i, "recipe_name"],
-            column_name="recipe_price",
-            original_value=int(df_corrected.at[i, "recipe_price"]),
-            corrected_value=source["recipe_price"],
-            reason="Missing recipe_price; derived as same as Milkshake",
-            source="Milkshake recipe",
-        )
-        df_corrected.at[i, "recipe_price"] = source["recipe_price"]
+        source = df_corrected.loc[source_mask].iloc[0]
+        price = int(source["recipe_price"])
+
+        for i in df_corrected.loc[target_mask].index:
+            correct_data_log(
+                table_name="recipes",
+                row_key=df_corrected.at[i, "recipe_name"],
+                column_name="recipe_price",
+                original_value=None,
+                corrected_value=price,
+                reason=f"Missing recipe_price; derived as same as {base_recipe}",
+                source="calculated",
+            )
+            df_corrected.at[i, "recipe_price"] = price
 
     return df_corrected
+
 
 def normalize_recipe_price(df: pd.DataFrame) -> pd.DataFrame:
     df_corrected = df.copy()
@@ -256,10 +279,20 @@ def normalize_recipe_price(df: pd.DataFrame) -> pd.DataFrame:
 
     return df_corrected
 
+RECIPE_PRICE_CORRECTIONS = {
+    "Crayfish Sashimi": lambda df: df["recipe_name"] == "Blue European Crayfish Sashimi",
+    "Milkshake (Regular)": lambda df: (
+        df["recipe_name"].str.startswith("Milkshake (") 
+        & (df["recipe_name"] != "Milkshake (Regular)")
+    ),
+    "Original Roll Cake": lambda df: 
+        df["recipe_name"].str.contains("Roll Cake", case=False) 
+        & (df["recipe_name"] != "Original Roll Cake")
+}
+
 def clean_recipes_table(df: pd.DataFrame) -> pd.DataFrame:
     df_corrected = df.copy()
     df_corrected = normalize_recipe_price(df_corrected)
     df_corrected = fix_blue_european_crayfish_sashimi(df_corrected)
-    df_corrected = fix_milkshake_recipe_prices(df_corrected)
+    df_corrected = fix_recipe_prices_from_base(df_corrected, RECIPE_PRICE_CORRECTIONS)
     return df_corrected
-

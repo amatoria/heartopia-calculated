@@ -31,7 +31,7 @@ def convert_to_df(data) -> pd.DataFrame:
     num_cols = len(headers)
     
     # Pad each row to match header length
-    padded = [row + [""] * (num_cols - len(row)) for row in data[1:]]
+    padded = [row + [""] * (num_cols - len(row)) for row in data]
     
     return pd.DataFrame(padded, columns=headers)
 
@@ -65,7 +65,7 @@ def get_all_df():
     fish = extraction(1, "B2:N85")
     all_data.update({"fish": fish})
 
-    recipes = extraction(7, "B3:U93")
+    recipes = extraction(7, "B2:U93")
     all_data.update({"recipes": recipes})
 
     return(all_data)

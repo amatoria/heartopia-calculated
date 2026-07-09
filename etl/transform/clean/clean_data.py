@@ -287,7 +287,12 @@ RECIPE_PRICE_CORRECTIONS = {
     ),
     "Original Roll Cake": lambda df: 
         df["recipe_name"].str.contains("Roll Cake", case=False) 
-        & (df["recipe_name"] != "Original Roll Cake")
+        & (df["recipe_name"] != "Original Roll Cake"),
+
+    "Refreshing Green Tea": lambda df:
+        (df["recipe_name"]. str.contains("Milk Tea", case=False) 
+         | df["recipe_name"]. str.contains("Daisy Tea", case=False) 
+         | df["recipe_name"]. str.contains("Rose Tea", case=False) )
 }
 
 def clean_recipes_table(df: pd.DataFrame) -> pd.DataFrame:

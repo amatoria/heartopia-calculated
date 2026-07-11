@@ -1,6 +1,6 @@
 import re
 from emoji import is_emoji
-from transform.parse_ingredients.ingredients_map import INGREDIENTS_MAP_EMOJIS, INGREDIENTS_MAP_TEXT
+from transform.parse_ingredients.ingredients_map import *
 import pandas as pd
 
 _WORD_NUMBERS = {
@@ -63,10 +63,12 @@ def _parse_quantity_prefix(text: str) -> tuple[int | None, str]:
 
   # "Any of the <word|digit>"
   m = re.match(r"any(?:\s+of)?(?:\s+the)?\s+(\w+)", text, re.IGNORECASE)
+  m = re.match(r"any(?:\s+of)?(?:\s+the)?\s+(\w+)", text, re.IGNORECASE)
   if m:
       word = m.group(1).lower()
       count = _WORD_NUMBERS.get(word) or (int(word) if word.isdigit() else None)
-      return count, text[m.end():].strip()
+      if count is not None:               # only consume prefix if we got a real number
+          return count, text[m.end():].strip()
 
   # Leading digit: "3 Golden King Crabs"
   m = re.match(r"(\d+)\s+", text)
@@ -105,10 +107,20 @@ def _resolve_text_ingredients(text: str) -> list[dict]:
         count_match = re.search(rf"(\d+)\s+{re.escape(key)}", remainder, re.IGNORECASE)
         qty = int(count_match.group(1)) if count_match else 1
 
-        choices.append({
-            "count": qty,
-            "options": [INGREDIENTS_MAP_TEXT[key]["name"]],
-        })
+        name = INGREDIENTS_MAP_TEXT[key]["name"]
+
+        # If this is a category, expand to all valid options
+        if name in CATEGORY_EXPANSIONS:
+            choices.append({
+                "count": qty,
+                "options": CATEGORY_EXPANSIONS[name],
+            })
+        else:
+            choices.append({
+                "count": qty,
+                "options": [name],
+            })
+
         remainder = pattern.sub("", remainder)
         if count_match:
             remainder = remainder.replace(count_match.group(1), "", 1)
@@ -139,34 +151,17 @@ def parse_energy(value) -> int | None:
     return int(m.group(1)) if m else None
 
 def parse_cell(text) -> list[dict] | None:
-    """
-    Parse a raw ingredient cell into a unified list of choice objects:
-
-        [{"count": N, "options": [emoji, ...]}, ...]
-
-    Args:
-      text: The raw ingredient cell to parse
-    Returns:
-      list of choices, each with a count and options
-    """
     if not text or str(text).strip() == "":
         return None
 
     text = str(text).strip()
 
-    # Strip bracket/paren content, but save paren emoji pools first
-    # Paren contents may hold an explicit option pool, e.g. "Two fruit (🔵🔴🍍...)"
-    paren_pools = [
-        _extract_resolved(m)
-        for m in re.findall(r"\(([^)]*)\)", text)
-        if _extract_resolved(m)   # only keep parens that actually contain emojis
-    ]
+    paren_contents = re.findall(r"\(([^)]*)\)", text)
+    paren_pools = [_extract_resolved(m) for m in paren_contents if _extract_resolved(m)]
 
     clean = re.sub(r"\(.*?\)", "", text)
     clean = re.sub(r"\[.*?\]", "", clean).strip()
 
-    # Separate text tokens from emoji tokens
-    # Split into alternating runs: text chunks vs emoji characters
     text_parts = []
     emoji_list = []
 
@@ -179,27 +174,30 @@ def parse_cell(text) -> list[dict] | None:
 
     combined_text = " ".join(text_parts).strip()
 
-    # Check for a quantity-prefix choice line
-    # e.g. "Any of the four", "Two fruit (...)"
+    paren_text_choices = []
+    for paren in paren_contents:
+        segments = [s.strip() for s in paren.split(";")]
+        for segment in segments:
+            if not _extract_resolved(segment):
+                paren_text_choices += _resolve_text_ingredients(segment)
+
     count, _ = _parse_quantity_prefix(combined_text)
-    is_choice_line = count is not None and (emoji_list or paren_pools)
+    is_choice_line = count is not None and bool(emoji_list or paren_pools)
 
     choices = []
 
     if is_choice_line:
-        # Option pool: prefer explicit paren pool, else all emojis on the line
         option_pool = paren_pools[0] if paren_pools else emoji_list
-
         choices.append({"count": count, "options": option_pool})
-
-        # Any emojis NOT in the pool are fixed ingredients alongside the choice
         pool_set = set(option_pool)
         fixed = [e for e in emoji_list if e not in pool_set]
         choices += _group_emoji_runs(fixed)
-
     else:
-        # Normal line: group emoji runs + resolve text ingredients
         choices += _group_emoji_runs(emoji_list)
-        choices += _resolve_text_ingredients(combined_text)
+        segments = [s.strip() for s in combined_text.split(",")]
+        for segment in segments:
+            choices += _resolve_text_ingredients(segment)
+
+    choices += paren_text_choices
 
     return choices if choices else None

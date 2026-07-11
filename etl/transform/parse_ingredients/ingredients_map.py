@@ -95,7 +95,10 @@ INGREDIENTS_MAP_EMOJIS = {
         "name": "truffle",
         "type": "ingredient"
     },
-
+    "❤":{
+        "name": "red sugar",
+        "type": "ingredient"        
+    },
     "❤️":{
         "name": "red sugar",
         "type": "ingredient"
@@ -177,17 +180,49 @@ INGREDIENTS_MAP_EMOJIS = {
     "🦐":{
         "name": "shrimp",
         "type": "category"
+    },
+    "❄️": {
+        "name": "frosting", 
+        "type": "ingredient"
+    },
+    "❄": {
+        "name": "frosting", 
+        "type": "ingredient"
+    },   
+    "💮": {
+        "name": "white daisy flower", 
+        "type": "ingredient"
+    },
+    "🌹": {
+        "name": "rose", 
+        "type": "ingredient"
+    },
+    "⬜": {
+        "name": "white radish", 
+        "type": "ingredient"
+    },
+    "🥑": {
+        "name": "avocado",
+        "type": "ingredient"
+    },
+    "🛢": {
+        "name": "cooking oil",
+        "type": "ingredient"
     }
 }
 
 INGREDIENTS_MAP_TEXT = {
+    "onsen egg": {
+        "name": "onsen egg",
+        "type": "ingredient"
+    },
     "white daisy flower":{
         "name": "white daisy flower",
         "type": "ingredient"
     },
     "king crab":{
         "name": "king crab",
-        "type": "ingredient",
+        "type": "ingredient"
     },
     "blue european crayfish":{
         "name": "blue european crayfish",
@@ -196,5 +231,86 @@ INGREDIENTS_MAP_TEXT = {
     "golden king crab":{
         "name": "golden king crab",
         "type": "ingredient"
-    }
+    },
+    "tiramisu": {
+        "name": "Tiramisu",
+        "type": "recipe"
+    },
+    "house salad": {
+        "name": "House Salad",
+        "type": "recipe"
+    },
+    "smoked fish bagel": {
+        "name": "smoked fish bagel",
+        "type": "recipe"
+    },
+    "seafood risotto": {
+        "name": "Seafood Risotto",
+        "type": "recipe"
+    },
+    "seafood pizza": {
+        "name": "Seafood Pizza",
+        "type": "recipe"
+    },
+    "apple pie": {
+        "name": "Apple Pie",
+        "type": "recipe"
+    },
+    "fish n chips": {
+        "name": "Fish n Chips",
+        "type": "recipe"
+    },"cheesecake": {
+        "name": "Cheesecake",
+        "type": "recipe"
+    },
+    "mellow black tea": {
+        "name": "Mellow Black Tea",
+        "type": "recipe"
+    },
+    "steak": {
+        "name": "Steak",
+        "type": "recipe"
+    },
+    "mashed white radish": {
+        "name": "Mashed White Radish",
+        "type": "recipe"
+    },
+    "creamy white radish soup": {
+        "name": "Creamy White Radish Soup",
+        "type": "recipe"
+    },
+    "iced coffee": {
+        "name": "Iced Coffee",
+        "type": "recipe"
+    },
+    "iced latte": {
+        "name": "Iced Latte",
+        "type": "recipe"
+    },
+    "frosted pancake": {
+        "name": "Frosted Pancake",
+        "type": "recipe"
+    },
+    "any fruit/vegetables": {
+        "name": "any fruit/vegetable",
+        "type": "recipe_category"
+    },
+    "any fruit/vegetable": {
+        "name": "any fruit/vegetable",
+        "type": "category"
+    },
+    "any drink": {
+        "name": "any drink",
+        "type": "category"
+    },
+}
+
+CATEGORY_EXPANSIONS = {
+    "any fruit/vegetable": ["apple", "blueberry", "grape", "mandarin", "pineapple", 
+                            "raspberry", "strawberry", "tomato", "lettuce", "potato",
+                            "carrot", "eggplant", "corn", "vegetable", "mushroom"],
+    "any drink": ["Bizarre Drink", "Coffee", "Latte", "Rich Black Tea Drink", 
+                  "Refreshing Green Tea Drink", "Rich Milk Tea", "Cocoa Milk Tea",
+                  "Refreshing Milk Green Tea", "Matcha Milk Green Tea", "Milkshake (Regular)",
+                  "Milkshake (Blueberry)", "Milkshake (Raspberry)", "Milkshake (Pineapple)"]
 }

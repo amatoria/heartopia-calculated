@@ -202,8 +202,8 @@ def build_ingredient_table(df_cleaned: pd.DataFrame) -> pd.DataFrame:
                     if info["name"] == option:
                         ingredient_type = info["type"]
                         break
-                if ingredient_type is None and option in INGREDIENTS_MAP_TEXT:
-                    ingredient_type = INGREDIENTS_MAP_TEXT[option]["type"]
+                if ingredient_type is None and option.lower() in INGREDIENTS_MAP_TEXT:
+                    ingredient_type = INGREDIENTS_MAP_TEXT[option.lower()]["type"]
 
                 rows.append({
                     "recipe_name":       recipe_name,

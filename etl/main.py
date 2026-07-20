@@ -36,7 +36,7 @@ def run_pipeline():
     df_to_sql("forageables", cleaned_df_forageables, engine)
     df_to_sql("fish", cleaned_df_fish, engine)
     df_to_sql("recipes", build_recipes_table(cleaned_df_recipes), engine)
-    df_to_sql("ingredients", build_ingredient_table(cleaned_df_recipes), engine)
+    df_to_sql("ingredients", build_ingredient_table(cleaned_df_recipes, cleaned_df_crops, cleaned_df_forageables, cleaned_df_fish), engine)
     df_to_sql("fish", build_fish_main_table(cleaned_df_fish), engine)
     df_to_sql("fish_weather", build_fish_weather_table(cleaned_df_fish), engine)
     df_to_sql("fish_time_of_day", build_fish_time_of_day_table(cleaned_df_fish), engine)

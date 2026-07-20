@@ -157,14 +157,14 @@ def build_recipes_table(df_cleaned: pd.DataFrame) -> pd.DataFrame:
 
     return pd.DataFrame(rows)
 
-def build_ingredient_table(df_cleaned: pd.DataFrame) -> pd.DataFrame:
+def build_ingredient_table(df_cleaned: pd.DataFrame, df_crops: pd.DataFrame, df_forageables: pd.DataFrame, df_fish: pd.DataFrame) -> pd.DataFrame:
     """
     For each recipe, parse the ingredients cell and explode into one row
     per ingredient option, with choice_group and choice_pick_count.
 
     Output columns:
         recipe_name, ingredient, type, quantity,
-        choice_group, choice_pick_count
+        choice_group, choice_pick_count, source
     """
     rows = []
 
@@ -173,8 +173,6 @@ def build_ingredient_table(df_cleaned: pd.DataFrame) -> pd.DataFrame:
         parsed = parse_cell(row["ingredients_raw"])
 
         if not parsed:
-            # Unparseable cell (e.g. pure text note) — still emit a sentinel
-            # row so the recipe isn't silently absent from the ingredient table
             rows.append({
                 "recipe_name":       recipe_name,
                 "ingredient":        None,
@@ -182,6 +180,7 @@ def build_ingredient_table(df_cleaned: pd.DataFrame) -> pd.DataFrame:
                 "quantity":          None,
                 "choice_group":      None,
                 "choice_pick_count": None,
+                "source":            None,
             })
             continue
 
@@ -208,18 +207,26 @@ def build_ingredient_table(df_cleaned: pd.DataFrame) -> pd.DataFrame:
                 rows.append({
                     "recipe_name":       recipe_name,
                     "ingredient":        option,
-                    # fixed ingredients carry their count in quantity;
-                    # choice ingredients always contribute 1 slot per option
                     "quantity":          count if not is_choice else 1,
                     "type":              ingredient_type,
                     "choice_group":      choice_group,
                     "choice_pick_count": choice_pick_count,
+                    "source":            None,
                 })
 
             if is_choice:
                 choice_group_counter += 1
 
-    return pd.DataFrame(rows)
+    df_ingredients = pd.DataFrame(rows)
+
+    source_map = {}
+    source_map.update({name: "crop"       for name in df_crops["seed_name"]})
+    source_map.update({name: "forageable" for name in df_forageables["name"]})
+    source_map.update({name: "fish"       for name in df_fish["fish_cleaned"]})
+
+    df_ingredients["source"] = df_ingredients["ingredient"].map(source_map)
+
+    return df_ingredients
 
 def transform_recipes(df):
     """ 

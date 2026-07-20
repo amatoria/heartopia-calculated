@@ -220,14 +220,6 @@ def fix_recipe_prices_from_base(
         corrections: dict mapping base_recipe_name -> target_mask_fn
                      where target_mask_fn takes a dataframe and returns a boolean Series.
 
-    Example:
-        corrections = {
-            "Crayfish Sashimi": lambda df: df["recipe_name"] == "Blue European Crayfish Sashimi",
-            "Milkshake (Regular)": lambda df: (
-                df["recipe_name"].str.startswith("Milkshake (") &
-                (df["recipe_name"] != "Milkshake (Regular)")
-            ),
-        }
     """
     df_corrected = df.copy()
 
@@ -236,10 +228,10 @@ def fix_recipe_prices_from_base(
         target_mask = target_mask_fn(df_corrected)
 
         if not source_mask.any():
-            print(f"Warning: base recipe '{base_recipe}' not found — skipped")
+            print(f"Warning: base recipe '{base_recipe}' not found. Skipped.")
             continue
         if not target_mask.any():
-            print(f"Warning: no target recipes found for base '{base_recipe}' — skipped")
+            print(f"Warning: no target recipes found for base '{base_recipe}'. Skipped")
             continue
 
         source = df_corrected.loc[source_mask].iloc[0]

@@ -295,6 +295,9 @@ def transform_recipes(df):
         "profit_star_5",
     ]
 
+    # remove Winter Frost seasonal recipes
+    df_cleaned = df_cleaned[~df_cleaned["recipe_name"].str.startswith("Winter Frost Season:", na=False)]
+
     # Energy gained and profit will use their respective functions and are therefore not included in numerical values cleaning
     numerical_columns = ["cooking_level", "recipe_price", 
                          "price_star_1", "price_star_2", "price_star_3", "price_star_4", "price_star_5",

@@ -169,7 +169,14 @@ def build_recipes_table(df_cleaned: pd.DataFrame) -> pd.DataFrame:
             "profit_star_5":  row["profit_star_5"],
         })
 
-    return pd.DataFrame(rows)
+    df_recipes = pd.DataFrame(rows)
+
+    df_recipes["profit_star_1"] = pd.to_numeric(df_recipes["profit_star_1"], errors="coerce")
+
+    threshold = df_recipes["profit_star_1"].quantile(0.60)
+    df_recipes["is_high_profit"] = df_recipes["profit_star_1"] > threshold
+
+    return df_recipes
 
 def build_ingredient_table(df_cleaned: pd.DataFrame, df_crops: pd.DataFrame, df_forageables: pd.DataFrame, df_fish: pd.DataFrame) -> pd.DataFrame:
     """
@@ -307,4 +314,7 @@ def transform_recipes(df):
         df_cleaned[column] = df_cleaned[column].apply(normalize_numerical_values)
 
     df_cleaned["ingredient_parsed"] = df_cleaned["ingredients_raw"].apply(parse_cell)
+
+    
+
     return df_cleaned

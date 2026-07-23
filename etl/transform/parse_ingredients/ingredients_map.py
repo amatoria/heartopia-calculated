@@ -72,7 +72,7 @@ INGREDIENTS_MAP_EMOJIS = {
         "type": "ingredient"
     },
     "🍫":{
-        "name": "cocoa",
+        "name": "cacao",
         "type": "ingredient"
     },
     "🛢️":{

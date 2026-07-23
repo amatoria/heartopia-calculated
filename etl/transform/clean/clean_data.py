@@ -19,7 +19,7 @@ def clean_name(name) -> str:
     name = unicodedata.normalize("NFKD", name)
     name = re.sub(r"[^\w\s]", "", name)
     name = re.sub(r"\s+", " ", name)
-    name = name.strip()
+    name = name.lower().strip()
 
     return name
 
@@ -186,7 +186,7 @@ def fix_blue_european_crayfish_sashimi(df: pd.DataFrame) -> pd.DataFrame:
             row_key="Blue European Crayfish Sashimi",
             column_name="recipe_price",
             original_value=None,
-            corrected_value=source["recipe_price"],
+            corrected_value=int(source["recipe_price"]),
             reason="Missing recipe_price; derived as same as Crayfish Sashimi",
             source="Crayfish Sashimi entry",
         )
@@ -209,9 +209,9 @@ def fix_blue_european_crayfish_sashimi(df: pd.DataFrame) -> pd.DataFrame:
     return df_corrected
 
 def fix_recipe_prices_from_base(
-    df: pd.DataFrame,
-    corrections: dict[str, callable],
-) -> pd.DataFrame:
+        df: pd.DataFrame,
+        corrections: dict[str, callable],
+    ) -> pd.DataFrame:
     """
     Correct recipe_price for recipes derived from a base recipe.
 

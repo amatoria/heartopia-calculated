@@ -38,6 +38,20 @@ def transform_crops(df):
     for column in numerical_columns:
         df_cleaned[column] = df_cleaned[column].apply(normalize_numerical_values)
     
+
+    mask = df_cleaned["seed_name"] == "potatoes"
+    for i in df_cleaned.loc[mask].index:
+        correct_data_log(
+            table_name="crops",
+            row_key=df_cleaned.at[i, "seed_name"],
+            column_name="seed_name",
+            original_value="potatoes",
+            corrected_value="potato",
+            reason="Incorrect plural form in raw data",
+            source="manual",
+        )
+    df_cleaned.loc[mask, "seed_name"] = "potato"
+
     df_cleaned = correct_crops_data(df_cleaned)
             
     return df_cleaned
@@ -220,9 +234,9 @@ def build_ingredient_table(df_cleaned: pd.DataFrame, df_crops: pd.DataFrame, df_
     df_ingredients = pd.DataFrame(rows)
 
     source_map = {}
-    source_map.update({name: "crop"       for name in df_crops["seed_name"]})
-    source_map.update({name: "forageable" for name in df_forageables["name"]})
-    source_map.update({name: "fish"       for name in df_fish["fish_cleaned"]})
+    source_map.update({name.lower(): "crop" for name in df_crops["seed_name"]})
+    source_map.update({name.lower(): "forageable" for name in df_forageables["name"]})
+    source_map.update({name.lower(): "fish" for name in df_fish["fish_cleaned"]})
 
     df_ingredients["source"] = df_ingredients["ingredient"].map(source_map)
 
